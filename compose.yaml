@@ -6,9 +6,9 @@ services:
     volumes:
       - dev-data:/usr/local/bin/ignition/data
       - ./services/DepModeDemo.gwbk:/restore.gwbk
-    #labels:
-    #  - traefik.enable=true
-    #  - traefik.hostname ${IGN_DEV_GATEWAY_NAME: -Dev-Gateway}
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_DEV_GATEWAY_NAME:-Dev-Gateway}
     environment:
       ACCEPT_IGNITION_EULA: 'Y'
       GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
@@ -32,9 +32,9 @@ services:
     volumes:
       - test-data:/usr/local/bin/ignition/data
       - ./services/DepModeDemo.gwbk:/restore.gwbk
-    #labels:
-    #  - traefik.enable=true
-    #  - traefik.hostname ${IGN_TEST_GATEWAY_NAME: -Dev-Gateway}
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_DEV_GATEWAY_NAME:-Test-Gateway}
     environment:
       ACCEPT_IGNITION_EULA: 'Y'
       GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
@@ -58,9 +58,9 @@ services:
     volumes:
       - prod-data:/usr/local/bin/ignition/data
       - ./services/DepModeDemo.gwbk:/restore.gwbk
-    #labels:
-    #  - traefik.enable=true
-    #  - traefik.hostname ${IGN_TEST_GATEWAY_NAME: -Dev-Gateway}
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_DEV_GATEWAY_NAME:-Prod-Gateway}
     environment:
       ACCEPT_IGNITION_EULA: 'Y'
       GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
@@ -77,3 +77,71 @@ services:
       -Dignition.config.mode-${IGN_PROD_MODE}
     networks:
       - depDemoNet
+
+  #traefik proxy service
+  proxy:
+    image: traefik:2.10
+    container_name: traefik
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - depDemoNet
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  dev-postgres: # Defines a service named 'db' for the PostgreSQL database
+    image: postgres:16-alpine # Uses the official PostgreSQL 16 image (alpine variant for smaller size)
+    restart: always # Ensures the container restarts automatically if it stops
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME:-admin} # Sets the PostgreSQL username
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password} # Sets the password for the specified user
+      POSTGRES_DB: ${POSTGRES_NAME:-postgres} # Sets the default database name
+    ports:
+      - "5432:5432" # Maps port 5432 on the host to port 5432 in the container
+    volumes:
+      - dev-postgres_data:/var/lib/postgresql/data
+    networks:
+      - depDemoNet 
+  test-postgres: # Defines a service named 'db' for the PostgreSQL database
+    image: postgres:16-alpine # Uses the official PostgreSQL 16 image (alpine variant for smaller size)
+    restart: always # Ensures the container restarts automatically if it stops
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME:-admin} # Sets the PostgreSQL username
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password} # Sets the password for the specified user
+      POSTGRES_DB: ${POSTGRES_NAME:-postgres} # Sets the default database name
+    ports:
+      - "5433:5432" # Maps port 5432 on the host to port 5432 in the container
+    volumes:
+      - test-postgres_data:/var/lib/postgresql/data
+    networks:
+      - depDemoNet
+  prod-postgres: # Defines a service named 'db' for the PostgreSQL database
+    image: postgres:16-alpine # Uses the official PostgreSQL 16 image (alpine variant for smaller size)
+    restart: always # Ensures the container restarts automatically if it stops
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME:-admin} # Sets the PostgreSQL username
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password} # Sets the password for the specified user
+      POSTGRES_DB: ${POSTGRES_NAME:-postgres} # Sets the default database name
+    ports:
+      - "5434:5432" # Maps port 5432 on the host to port 5432 in the container
+    volumes:
+      - prod-postgres_data:/var/lib/postgresql/data
+    networks:
+      - depDemoNet
+volumes:
+  dev-data:
+  test-data:
+  prod-data:
+  dev-postgres_data:
+  test-postgres_data:
+  prod-postgres_data:
+networks:
+  depDemoNet:
