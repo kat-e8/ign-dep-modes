@@ -1,0 +1,79 @@
+services:
+  dev-gateway:
+    image: inductiveautomation/ignition:${IGN_STANDARD_RELEASE:-latest}
+    pull_policy: build
+    restart: always
+    volumes:
+      - dev-data:/usr/local/bin/ignition/data
+      - ./services/DepModeDemo.gwbk:/restore.gwbk
+    #labels:
+    #  - traefik.enable=true
+    #  - traefik.hostname ${IGN_DEV_GATEWAY_NAME: -Dev-Gateway}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_STANDARD_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_STANDARD_EDITION:-standard}
+      TZ: ${TZ:-africa/johanneburg}
+    command:
+      -n ${IGN_DEV_GATEWAY_NAME:-Dev-Gateway}
+      -h 80
+      -s 443
+      -a ${IGN_DEV_GATEWAY_NAME:-Dev-Gateway}.localtest.demo
+      -r /restore.gwb
+       --
+      -Dignition.config.mode-${IGN_DEV_MODE}
+    networks:
+      - depDemoNet
+  test-gateway:
+    image: inductiveautomation/ignition:${IGN_STANDARD_RELEASE:-latest}
+    pull_policy: build
+    restart: always
+    volumes:
+      - test-data:/usr/local/bin/ignition/data
+      - ./services/DepModeDemo.gwbk:/restore.gwbk
+    #labels:
+    #  - traefik.enable=true
+    #  - traefik.hostname ${IGN_TEST_GATEWAY_NAME: -Dev-Gateway}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_STANDARD_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_STANDARD_EDITION:-standard}
+      TZ: ${TZ:-africa/johanneburg}
+    command:
+      -n ${IGN_TEST_GATEWAY_NAME:-Test-Gateway}
+      -h 80
+      -s 443
+      -a ${IGN_TEST_GATEWAY_NAME:-Test-Gateway}.localtest.me
+      -r /restore.gwb
+       --
+      -Dignition.config.mode-${IGN_TEST_MODE}
+    networks:
+      - depDemoNet
+  prod-gateway:
+    image: inductiveautomation/ignition:${IGN_STANDARD_RELEASE:-latest}
+    pull_policy: build
+    restart: always
+    volumes:
+      - prod-data:/usr/local/bin/ignition/data
+      - ./services/DepModeDemo.gwbk:/restore.gwbk
+    #labels:
+    #  - traefik.enable=true
+    #  - traefik.hostname ${IGN_TEST_GATEWAY_NAME: -Dev-Gateway}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_STANDARD_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_STANDARD_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_STANDARD_EDITION:-standard}
+      TZ: ${TZ:-africa/johanneburg}
+    command:
+      -n ${IGN_PROD_GATEWAY_NAME:-Prod-Gateway}
+      -h 80
+      -s 443
+      -a ${IGN_PROD_GATEWAY_NAME:-Prod-Gateway}.localtest.me
+      -r /restore.gwb
+       --
+      -Dignition.config.mode-${IGN_PROD_MODE}
+    networks:
+      - depDemoNet
